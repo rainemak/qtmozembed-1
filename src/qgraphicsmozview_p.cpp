@@ -60,6 +60,7 @@ QGraphicsMozViewPrivate::QGraphicsMozViewPrivate(IMozQViewIface* aViewIface)
     , mIsLoading(false)
     , mLastIsGoodRotation(true)
     , mIsPasswordField(false)
+    , mIsTextArea(false)
     , mGraphicsViewAssigned(false)
     , mContentRect(0.0, 0.0, 0.0, 0.0)
     , mScrollableSize(0.0, 0.0)
@@ -376,10 +377,28 @@ void QGraphicsMozViewPrivate::IMENotification(int aIstate, bool aOpen, int aCaus
                                               const PRUnichar* inputType, const PRUnichar* inputMode)
 {
     Qt::InputMethodHints hints = Qt::ImhNone;
+    mIsPasswordField = false;
+    mIsTextArea = false;
     hints = aIstate == 2 ? Qt::ImhHiddenText : Qt::ImhPreferLowercase;
 
     QString imType((QChar*)inputType);
-    if (imType.contains("number", Qt::CaseInsensitive)) {
+    // Handle "textarea" first so that "text" is fine as well.
+    if (imType.contains("textarea", Qt::CaseInsensitive)) {
+        hints = Qt::ImhNone;
+        mIsTextArea = true;
+    }
+    else if (imType.contains("text", Qt::CaseInsensitive) ||
+        imType.contains("search", Qt::CaseInsensitive)) {
+        hints |= Qt::ImhNoAutoUppercase | Qt::ImhNoPredictiveText;
+    }
+    else if (imType.contains("password", Qt::CaseInsensitive)) {
+        hints |= Qt::ImhHiddenText;
+        hints |= Qt::ImhNoAutoUppercase;
+        hints |= Qt::ImhNoPredictiveText;
+        hints |= Qt::ImhSensitiveData;
+        mIsPasswordField = true;
+    }
+    else if (imType.contains("number", Qt::CaseInsensitive)) {
         //hints |= Qt::ImhDigitsOnly;
         hints |= Qt::ImhFormattedNumbersOnly;
     }

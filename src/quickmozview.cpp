@@ -316,6 +316,8 @@ void QuickMozView::setInputMethodHints(Qt::InputMethodHints hints)
 void QuickMozView::inputMethodEvent(QInputMethodEvent* event)
 {
     LOGT("cStr:%s, preStr:%s, replLen:%i, replSt:%i", event->commitString().toUtf8().data(), event->preeditString().toUtf8().data(), event->replacementLength(), event->replacementStart());
+
+    // FIXME: This maybe break if replacement exists.
     if (d->mViewInitialized) {
         d->mView->SendTextEvent(event->commitString().toUtf8().data(), event->preeditString().toUtf8().data());
     }
@@ -329,12 +331,20 @@ void QuickMozView::keyPressEvent(QKeyEvent* event)
     int32_t gmodifiers = MozKey::QtModifierToDOMModifier(event->modifiers());
     int32_t domKeyCode = MozKey::QtKeyCodeToDOMKeyCode(event->key(), event->modifiers());
     int32_t charCode = 0;
+
     if (event->text().length() && event->text()[0].isPrint()) {
         charCode = (int32_t)event->text()[0].unicode();
         if (getenv("USE_TEXT_EVENTS")) {
             return;
         }
     }
+
+    if (!d->mIsTextArea && !d->mIsPasswordField &&
+        (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) &&
+        d->mLocation.contains("youtube.com", Qt::CaseInsensitive)) {
+        charCode = domKeyCode;
+    }
+
     d->mView->SendKeyPress(domKeyCode, gmodifiers, charCode);
 }
 
@@ -346,6 +356,7 @@ void QuickMozView::keyReleaseEvent(QKeyEvent* event)
     int32_t gmodifiers = MozKey::QtModifierToDOMModifier(event->modifiers());
     int32_t domKeyCode = MozKey::QtKeyCodeToDOMKeyCode(event->key(), event->modifiers());
     int32_t charCode = 0;
+
     if (event->text().length() && event->text()[0].isPrint()) {
         charCode = (int32_t)event->text()[0].unicode();
         if (getenv("USE_TEXT_EVENTS")) {
@@ -353,6 +364,13 @@ void QuickMozView::keyReleaseEvent(QKeyEvent* event)
             return;
         }
     }
+
+    if (!d->mIsTextArea && !d->mIsPasswordField &&
+        (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) &&
+        d->mLocation.contains("youtube.com", Qt::CaseInsensitive)) {
+        charCode = domKeyCode;
+    }
+
     d->mView->SendKeyRelease(domKeyCode, gmodifiers, charCode);
 }
 

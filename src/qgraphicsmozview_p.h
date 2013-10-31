@@ -111,6 +111,7 @@ public:
     bool mIsLoading;
     bool mLastIsGoodRotation;
     bool mIsPasswordField;
+    bool mIsTextArea;
     bool mGraphicsViewAssigned;
     QRectF mContentRect;
     QSizeF mScrollableSize;
