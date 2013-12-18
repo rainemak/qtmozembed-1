@@ -24,6 +24,8 @@
 #include <QtGui/QOpenGLContext>
 #include <QSGSimpleRectNode>
 #include <QSGSimpleTextureNode>
+#include <QScreen>
+
 #include "qgraphicsmozview_p.h"
 #include "EmbedQtKeyUtils.h"
 #include "qmozhorizontalscrolldecorator.h"
@@ -130,15 +132,51 @@ void QuickMozView::requestGLContext(bool& hasContext, QSize& viewPortSize)
 {
     hasContext = d->mHasContext;
     viewPortSize = d->mGLSurfaceSize;
+    qDebug() << hasContext << viewPortSize;
 }
 
-void QuickMozView::updateGLContextInfo(bool hasContext, QSize viewPortSize)
+bool QuickMozView::updateGLContextInfo(bool hasContext, QSize viewPortSize)
 {
-    d->mHasContext = hasContext;
-    d->mGLSurfaceSize = viewPortSize;
-    QRectF r(0, 0, d->mGLSurfaceSize.width(), d->mGLSurfaceSize.height());
-    r = mapRectToScene(r);
-    d->mGLSurfaceSize = r.size().toSize();
+    if (hasContext != d->mHasContext || d->mGLSurfaceSize != viewPortSize) {
+        d->mHasContext = hasContext;
+        d->mGLSurfaceSize = viewPortSize;
+        return true;
+    }
+    return false;
+}
+
+bool QuickMozView::updateGLContextInfo(Qt::ScreenOrientation orientation)
+{
+    if (window()) {
+        QSize viewPortSize;
+        int minValue = qMin(window()->width(), window()->height());
+        int maxValue = qMax(window()->width(), window()->height());
+        bool landscape = false;
+
+        switch (orientation) {
+        case Qt::LandscapeOrientation:
+        case Qt::InvertedLandscapeOrientation:
+            viewPortSize.setWidth(maxValue);
+            viewPortSize.setHeight(minValue);
+            qDebug() << "-- Handle landscape viewPortSize" << viewPortSize;
+            landscape = true;
+            break;
+        default:
+            qDebug() << "-- Default to portrait";
+            viewPortSize.setWidth(minValue);
+            viewPortSize.setHeight(maxValue);
+            break;
+        }
+
+        return updateGLContextInfo(d->mHasContext, viewPortSize);
+
+//        if (landscape && d->mSize.width() < d->mSize.height()) {
+//            d->mSize.transpose();
+//        }
+//        QQuickItem::setSize(d->mSize);
+//        d->UpdateViewSize();
+    }
+    return false;
 }
 
 void QuickMozView::itemChange(ItemChange change, const ItemChangeData &)
@@ -149,15 +187,25 @@ void QuickMozView::itemChange(ItemChange change, const ItemChangeData &)
             return;
         connect(win, SIGNAL(beforeRendering()), this, SLOT(beforeRendering()), Qt::DirectConnection);
         connect(win, SIGNAL(sceneGraphInitialized()), this, SLOT(sceneGraphInitialized()), Qt::DirectConnection);
+//        connect(win->screen(), SIGNAL(orientationChanged(Qt::ScreenOrientation)), this, SLOT(updateGLContextInfo(Qt::ScreenOrientation)));
         win->setClearBeforeRendering(false);
     }
 }
 
 void QuickMozView::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
-    d->mSize = newGeometry.size();
-    d->UpdateViewSize();
+    qDebug() << "newGeometry: " << newGeometry << "oldGeometry: " << oldGeometry;
     QQuickItem::geometryChanged(newGeometry, oldGeometry);
+    // Width and height are updated separately we want to avoid cases where width and height
+    // are equals or size have not actually changed at all. This will trigger viewport
+    // calculation update.
+    if (newGeometry.width() != newGeometry.height() && d->mSize != newGeometry.size()) {
+        d->mSize = newGeometry.size();
+        if (window()) {
+            updateGLContextInfo(window()->contentOrientation());
+        }
+        d->UpdateViewSize();
+    }
 }
 
 void QuickMozView::sceneGraphInitialized()
@@ -191,10 +239,13 @@ void QuickMozView::beforeRendering()
 
 void QuickMozView::RenderToCurrentContext(QMatrix affine, EmbedLiteRenderTarget* renderTarget)
 {
+//    qDebug() << "QuickMozView::RenderToCurrentContext: " << d->mSize << affine.m11() << affine.m12() << affine.m21() <<  affine.m22() <<  affine.dx() <<  affine.dy() << renderTarget;
+//    qDebug() << "mSize:" << d->mSize << "mGLSurfaceSize:" << d->mGLSurfaceSize;
     if (mMCRenderer && mMCRenderer->thread() != QThread::currentThread()) {
         mMCRenderer->RenderToCurrentContext(affine);
         return;
     }
+
     gfxMatrix matr(affine.m11(), affine.m12(), affine.m21(), affine.m22(), affine.dx(), affine.dy());
     d->mView->SetGLViewTransform(matr);
     d->mView->SetViewClipping(0, 0, d->mSize.width(), d->mSize.height());
@@ -204,6 +255,7 @@ void QuickMozView::RenderToCurrentContext(QMatrix affine, EmbedLiteRenderTarget*
 mozilla::embedlite::EmbedLiteRenderTarget*
 QuickMozView::CreateEmbedLiteRenderTarget(QSize size)
 {
+    qDebug() << "QuickMozView::CreateEmbedLiteRenderTarget: " << size;
     return d->mView->CreateEmbedLiteRenderTarget(size.width(), size.height());
 }
 
@@ -791,3 +843,11 @@ void QuickMozView::timerEvent(QTimerEvent *event)
         mOffsetY = offsetY;
     }
 }
+
+//void QuickMozView::classBegin() {
+//    QQuickItem::classBegin();
+//}
+
+//void QuickMozView::componentComplete() {
+//    QQuickItem::componentComplete();
+//}

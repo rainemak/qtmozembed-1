@@ -187,6 +187,9 @@ void QGraphicsMozViewPrivate::ResetState()
 
 void QGraphicsMozViewPrivate::UpdateViewSize()
 {
+    if (mSize.width() == mSize.height() || mSize.height() == 0 || mSize.width() == 0)
+        return;
+
     if (!mViewInitialized) {
         return;
     }
@@ -449,6 +452,7 @@ void QGraphicsMozViewPrivate::GetIMEStatus(int32_t* aIMEEnabled, int32_t* aIMEOp
 
 void QGraphicsMozViewPrivate::OnScrolledAreaChanged(unsigned int aWidth, unsigned int aHeight)
 {
+    LOGT("sz[%u,%u]", aWidth, aHeight);
     Q_UNUSED(aWidth)
     Q_UNUSED(aHeight)
 }
@@ -473,7 +477,7 @@ void QGraphicsMozViewPrivate::SyncViewportInfo(const nsIntRect& aDisplayPort,
                                                float aDisplayResolution, bool aLayersUpdated,
                                                nsIntPoint& aScrollOffset, float& aScaleX, float& aScaleY)
 {
-    LOGT();
+    LOGT("viewport display port[%d,%d,%d,%d]", aDisplayPort.x, aDisplayPort.y, aDisplayPort.width, aDisplayPort.height);
 }
 
 void QGraphicsMozViewPrivate::SetPageRect(const gfxRect& aCssPageRect)

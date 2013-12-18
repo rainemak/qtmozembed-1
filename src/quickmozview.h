@@ -68,15 +68,18 @@ protected:
     virtual void focusOutEvent(QFocusEvent*);
     virtual void touchEvent(QTouchEvent*);
     virtual void timerEvent(QTimerEvent*);
+//    virtual void classBegin();
+//    virtual void componentComplete();
 
 public Q_SLOTS:
     void beforeRendering();
     void sceneGraphInitialized();
     void cleanup();
     void setInputMethodHints(Qt::InputMethodHints hints);
-    void updateGLContextInfo(bool hasContext, QSize viewPortSize);
+    bool updateGLContextInfo(bool hasContext, QSize viewPortSize);
 
 private Q_SLOTS:
+    bool updateGLContextInfo(Qt::ScreenOrientation orientation);
     void onInitialized();
     void updateEnabled();
 
