@@ -49,6 +49,8 @@ Q_DECLARE_METATYPE(QMozReturnValue) \
     Q_PROPERTY(int loadProgress READ loadProgress NOTIFY loadProgressChanged) \
     Q_PROPERTY(bool loading READ loading NOTIFY loadingChanged FINAL) \
     Q_PROPERTY(QRectF contentRect READ contentRect NOTIFY viewAreaChanged FINAL) \
+    Q_PROPERTY(qreal contentX READ contentX WRITE setContentX NOTIFY contentXChanged FINAL) \
+    Q_PROPERTY(qreal contentY READ contentY WRITE setContentY NOTIFY contentYChanged FINAL) \
     Q_PROPERTY(qreal contentWidth READ contentWidth NOTIFY contentWidthChanged FINAL) \
     Q_PROPERTY(qreal contentHeight READ contentHeight NOTIFY contentHeightChanged FINAL) \
     Q_PROPERTY(QSizeF scrollableSize READ scrollableSize FINAL) \
@@ -75,6 +77,10 @@ Q_DECLARE_METATYPE(QMozReturnValue) \
     bool canGoForward() const; \
     bool loading() const; \
     QRectF contentRect() const; \
+    qreal contentX() const; \
+    void setContentX(qreal contentX); \
+    qreal contentY() const; \
+    void setContentY(qreal contentY); \
     qreal contentWidth() const; \
     qreal contentHeight() const; \
     QSizeF scrollableSize() const; \
@@ -149,6 +155,8 @@ Q_DECLARE_METATYPE(QMozReturnValue) \
     void draggingChanged(); \
     void movingChanged(); \
     void pinchingChanged(); \
+    void contentYChanged(); \
+    void contentXChanged(); \
     void contentWidthChanged(); \
     void contentHeightChanged(); \
     void chromeGestureEnabledChanged(); \

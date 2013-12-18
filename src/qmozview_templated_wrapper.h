@@ -35,6 +35,8 @@ public:
     virtual void securityChanged(QString status, uint state) = 0;
     virtual void firstPaint(int offx, int offy) = 0;
     virtual void contentLoaded(QString docuri) = 0;
+    virtual void contentXChanged() = 0;
+    virtual void contentYChanged() = 0;
     virtual void contentWidthChanged() = 0;
     virtual void contentHeightChanged() = 0;
     virtual void viewAreaChanged() = 0;
@@ -184,6 +186,16 @@ public:
     void pinchingChanged()
     {
         Q_EMIT view.pinchingChanged();
+    }
+
+    void contentXChanged()
+    {
+        Q_EMIT view.contentXChanged();
+    }
+
+    void contentYChanged()
+    {
+        Q_EMIT view.contentYChanged();
     }
 
     void contentWidthChanged()

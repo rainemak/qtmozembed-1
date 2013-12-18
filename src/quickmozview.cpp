@@ -265,6 +265,19 @@ void QuickMozView::startMoveMonitoring()
     d->mFlicking = true;
 }
 
+qreal QuickMozView::contentY() const
+{
+    return d->mScrollableOffset.y();
+}
+
+void QuickMozView::setContentY(qreal contentY)
+{
+    qreal oldY = d->mScrollableOffset.y();
+    qreal delta = oldY - contentY;
+    // Changed when returns back from gecko at QGraphicsMozViewPrivate::ScrollUpdate
+    d->mView->ScrollBy(0, delta);
+}
+
 QSGNode*
 QuickMozView::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
 {

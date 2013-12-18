@@ -537,11 +537,21 @@ bool QGraphicsMozViewPrivate::ScrollUpdate(const gfxPoint& aPosition, const floa
     float posX(aPosition.x * mContentResolution);
     float posY(aPosition.y * mContentResolution);
 
-    if (!gfx::FuzzyEqual(mScrollableOffset.x(), posX, SCROLL_EPSILON) ||
-        !gfx::FuzzyEqual(mScrollableOffset.y(), posY, SCROLL_EPSILON)) {
+    bool scrollXChanged = !gfx::FuzzyEqual(mScrollableOffset.x(), posX, SCROLL_EPSILON);
+    bool scrollYChanged = !gfx::FuzzyEqual(mScrollableOffset.y(), posY, SCROLL_EPSILON);
+    if (scrollXChanged || scrollYChanged) {
+        mScrollableOffset.setX(posX);
+
+        if (scrollYChanged) {
+            mScrollableOffset.setY(posY);
+            // Testing stuff. Not orientation support related.
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+            qDebug() << "mScrollableOffset.setY(posY) " << posY;
+            mViewIface->contentYChanged();
+#endif
+        }
 
         mScrollableOffset.setX(posX);
-        mScrollableOffset.setY(posY);
         mViewIface->scrollableOffsetChanged();
 
         if (mEnabled) {

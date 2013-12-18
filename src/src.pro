@@ -35,7 +35,8 @@ HEADERS += qmozcontext.h \
            qmessagepump.h \
            EmbedQtKeyUtils.h \
            geckoworker.h \
-           qmozview_defined_wrapper.h
+           qmozview_defined_wrapper.h \
+           qmozview_templated_wrapper.h
 
 !contains(QT_MAJOR_VERSION, 4) {
   SOURCES += quickmozview.cpp qmozviewsgnode.cpp qsgthreadobject.cpp qmcthreadobject.cpp
