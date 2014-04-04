@@ -18,7 +18,6 @@ class QuickMozView : public QQuickItem
 {
     Q_OBJECT
     Q_PROPERTY(int parentId READ parentId WRITE setParentID NOTIFY parentIdChanged FINAL)
-    Q_PROPERTY(unsigned parentid WRITE setParentID)
     Q_PROPERTY(bool active READ active WRITE setActive NOTIFY activeChanged FINAL)
     Q_PROPERTY(QObject* child READ getChild NOTIFY childChanged)
 

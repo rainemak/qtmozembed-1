@@ -19,7 +19,6 @@ class QDeclarativeMozView : public QDeclarativeItem
 
     Q_PROPERTY(int preferredWidth READ preferredWidth WRITE setPreferredWidth NOTIFY preferredWidthChanged)
     Q_PROPERTY(int preferredHeight READ preferredHeight WRITE setPreferredHeight NOTIFY preferredHeightChanged)
-    Q_PROPERTY(unsigned parentid WRITE setParentID)
     Q_PROPERTY(QObject* child READ getChild NOTIFY childChanged)
 public:
     QDeclarativeMozView(QDeclarativeItem *parent = 0);
