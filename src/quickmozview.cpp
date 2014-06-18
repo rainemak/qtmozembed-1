@@ -79,6 +79,10 @@ QuickMozView::QuickMozView(QQuickItem *parent)
     connect(this, SIGNAL(enabledChanged()), this, SLOT(updateEnabled()));
     connect(this, SIGNAL(dispatchItemUpdate()), this, SLOT(update()));
     updateEnabled();
+
+#ifndef NO_PRIVATE_API
+    mInThreadRendering = getenv("QML_BAD_GUI_RENDER_LOOP") != 0 && getenv("QML_FORCE_THREADED_RENDERER") == 0;
+#endif
 }
 
 QuickMozView::~QuickMozView()
@@ -109,13 +113,13 @@ QuickMozView::onInitialized()
     if (mInThreadRendering) {
         onRenderThreadReady();
     }
-    else
-#endif
+#else
     {
         d->mContext->setCompositorInSeparateThread(true);
         Q_EMIT wrapRenderThreadGLContext();
         update();
     }
+#endif
 }
 
 void
@@ -163,7 +167,7 @@ void QuickMozView::updateGLContextInfo(QOpenGLContext* ctx)
         printf("ERROR: QuickMozView not supposed to work without GL context\n");
         return;
     }
-    d->mGLSurfaceSize = ctx->surface()->size();
+    updateGLContextInfo();
 }
 
 /**
@@ -203,7 +207,9 @@ void QuickMozView::itemChange(ItemChange change, const ItemChangeData &)
         if (!win)
             return;
         connect(win, SIGNAL(beforeRendering()), this, SLOT(beforeRendering()), Qt::DirectConnection);
-        connect(win, SIGNAL(sceneGraphInitialized()), this, SLOT(init()), Qt::DirectConnection);
+        // This is disconnected when signal first time emitted and context ready. GL Context used
+        // for rendering will be bound when signal is emitted.
+        connect(win, SIGNAL(beforeSynchronizing()), this, SLOT(init()), Qt::DirectConnection);
         win->setClearBeforeRendering(false);
     }
 }
@@ -240,6 +246,11 @@ void QuickMozView::init()
     }
 
     updateGLContextInfo(QOpenGLContext::currentContext());
+
+    if (d->mContext->initialized()) {
+        onRenderThreadReady();
+        disconnect(window(), SIGNAL(beforeSynchronizing()), this, 0);
+    }
 }
 
 void QuickMozView::beforeRendering()
@@ -948,10 +959,6 @@ void QuickMozView::componentComplete()
     // in viewInitilized signal handler.
     // Temporary check for QML_BAD_GUI_RENDER_LOOP in order to not break current behavior and make it work for
     // multi thread rendering context
-    static bool isForcedInThreadRendering = getenv("QML_BAD_GUI_RENDER_LOOP") != 0 && getenv("QML_FORCE_THREADED_RENDERER") == 0;
-    if (isForcedInThreadRendering) {
-      init();
-    }
     if (!d->mContext->initialized()) {
         connect(d->mContext, SIGNAL(onInitialized()), this, SLOT(onInitialized()));
     } else {
