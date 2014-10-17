@@ -26,7 +26,9 @@
 #include <QtGui/QOpenGLContext>
 #include <QSGSimpleRectNode>
 #include <QSGSimpleTextureNode>
+#if QTMOZ_GL_EXTENSIONS
 #include <QtOpenGLExtensions>
+#endif
 
 #include "qgraphicsmozview_p.h"
 #include "EmbedQtKeyUtils.h"
@@ -290,7 +292,7 @@ void QuickMozView::refreshNodeTexture()
 
     if (d && d->mView)
     {
-#if defined(QT_OPENGL_ES_2)
+#if defined(QT_OPENGL_ES_2) && defined(QTMOZ_GL_EXTENSIONS)
         int width = 0, height = 0;
         static QOpenGLExtension_OES_EGL_image* extension = nullptr;
         if (!extension) {
@@ -306,7 +308,10 @@ void QuickMozView::refreshNodeTexture()
         extension->glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, image);
         Q_EMIT textureReady(mConsTex, QSize(width, height));
 #else
-#warning "Implement me for non ES2 platform"
+        int texId = 0, width = 0, height = 0;
+        if (gSGRenderer && d->mView->GetPendingTexture(gSGRenderer->getTargetContextWrapper(), &texId, &width, &height)) {
+            Q_EMIT textureReady(texId, QSize(width, height));
+        }
 #endif
     }
 }
