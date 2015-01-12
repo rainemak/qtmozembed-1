@@ -75,7 +75,9 @@ QuickMozView::QuickMozView(QQuickItem *parent)
     connect(this, SIGNAL(dispatchItemUpdate()), this, SLOT(update()));
     connect(this, SIGNAL(loadProgressChanged()), this, SLOT(updateLoaded()));
     connect(this, SIGNAL(loadingChanged()), this, SLOT(updateLoaded()));
-
+    connect(this, &QuickMozView::updateViewSize, this, [=]() {
+        d->UpdateViewSize();
+    });
     updateEnabled();
 }
 
@@ -94,11 +96,11 @@ QuickMozView::~QuickMozView()
 void
 QuickMozView::SetIsActive(bool aIsActive)
 {
+    qDebug() << "GLDebug SetIsActive" << QThread::currentThread() << thread() << d->mView << mActive;
     if (QThread::currentThread() == thread() && d->mView) {
         d->mView->SetIsActive(aIsActive);
         if (mActive) {
             updateGLContextInfo();
-            d->UpdateViewSize();
         }
     } else {
         Q_EMIT setIsActive(aIsActive);
@@ -150,12 +152,14 @@ void QuickMozView::requestGLContext(bool& hasContext, QSize& viewPortSize)
 
 void QuickMozView::updateGLContextInfo(QOpenGLContext* ctx)
 {
+    qDebug() << "GLDebug context:" << (ctx != nullptr) << (ctx && ctx->surface());
     d->mHasContext = ctx != nullptr && ctx->surface() != nullptr;
     if (!d->mHasContext) {
         printf("ERROR: QuickMozView not supposed to work without GL context\n");
         return;
     }
     updateGLContextInfo();
+
 }
 
 /**
@@ -164,6 +168,7 @@ void QuickMozView::updateGLContextInfo(QOpenGLContext* ctx)
  */
 void QuickMozView::updateGLContextInfo()
 {
+    qDebug() << "GLDebug updatelgcontextinfo 1:" << window();
     if (window()) {
         Qt::ScreenOrientation orientation = window()->contentOrientation();
         QSize viewPortSize;
@@ -185,6 +190,8 @@ void QuickMozView::updateGLContextInfo()
         }
 
         d->mGLSurfaceSize = viewPortSize;
+        qDebug() << "GLDebug updatelgcontextinfo 2:" << d->mGLSurfaceSize;
+        Q_EMIT updateViewSize();
     }
 }
 
@@ -213,11 +220,12 @@ void QuickMozView::geometryChanged(const QRectF &newGeometry, const QRectF &oldG
     // Width and height are updated separately. So we want to avoid cases where width and height
     // equals or size have not actually changed at all. This will trigger viewport
     // calculation update.
+
+    qDebug() << "GLDebug newGeometry:" << newGeometry << d->mSize << mActive;
     if (newGeometry.width() != newGeometry.height() && d->mSize != newGeometry.size()) {
         d->mSize = newGeometry.size();
         if (mActive) {
             updateGLContextInfo();
-            d->UpdateViewSize();
         }
     }
 }
@@ -232,6 +240,8 @@ void QuickMozView::clearThreadRenderObject()
 {
     QOpenGLContext* ctx = QOpenGLContext::currentContext();
     Q_ASSERT(ctx != NULL && ctx->makeCurrent(ctx->surface()));
+    updateGLContextInfo(ctx);
+
 
 #if defined(QT_OPENGL_ES_2)
     if (mConsTex) {

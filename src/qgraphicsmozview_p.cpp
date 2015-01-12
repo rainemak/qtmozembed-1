@@ -231,6 +231,7 @@ void QGraphicsMozViewPrivate::ResetPainted()
 
 void QGraphicsMozViewPrivate::UpdateViewSize()
 {
+    qDebug() << "GLDebug size:" << mSize << "init:" << mViewInitialized << "accel:" << mContext->GetApp()->IsAccelerated() << "context:" << mHasContext << "surface size:" << mGLSurfaceSize;
     if (mSize.isEmpty())
         return;
 
@@ -259,6 +260,8 @@ bool QGraphicsMozViewPrivate::RequestCurrentGLContext(QSize& aViewPortSize)
 
 void QGraphicsMozViewPrivate::ViewInitialized()
 {
+
+    qDebug() << "GLDebug ViewInitialized";
     mViewInitialized = true;
     UpdateViewSize();
     // This is currently part of official API, so let's subscribe to these messages by default

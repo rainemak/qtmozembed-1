@@ -54,7 +54,6 @@ public Q_SLOTS:
 Q_SIGNALS:
     void childChanged();
     void setIsActive(bool);
-    void wrapRenderThreadGLContext();
     void dispatchItemUpdate();
     void textureReady(int id, const QSize &size);
     void parentIdChanged();
@@ -62,6 +61,7 @@ Q_SIGNALS:
     void activeChanged();
     void backgroundChanged();
     void loadedChanged();
+    void updateViewSize();
 
     Q_MOZ_VIEW_SIGNALS
 
