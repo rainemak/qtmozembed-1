@@ -45,8 +45,8 @@ using namespace mozilla::embedlite;
 #define MOZVIEW_FLICK_STOP_TIMEOUT 500
 #endif
 
-QuickMozView::QuickMozView(QQuickItem *parent)
-  : QQuickItem(parent)
+QuickMozView::QuickMozView(QObject *parent)
+  : QObject(parent)
   , d(new QGraphicsMozViewPrivate(new IMozQView<QuickMozView>(*this)))
   , mParentID(0)
   , mUseQmlMouse(false)
@@ -54,9 +54,9 @@ QuickMozView::QuickMozView(QQuickItem *parent)
   , mTimerId(0)
   , mOffsetX(0.0)
   , mOffsetY(0.0)
-#ifndef NO_PRIVATE_API
-  , mInThreadRendering(false)
-#endif
+//#ifndef NO_PRIVATE_API
+  , mInThreadRendering(true)
+//#endif
   , mPreedit(false)
   , mActive(false)
   , mHasPendingInvalidate(false)
@@ -67,20 +67,22 @@ QuickMozView::QuickMozView(QQuickItem *parent)
         Initialized = true;
     }
 
-    setFlag(ItemHasContents, false);
+    //setFlag(ItemHasContents, false);
 
-    setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton | Qt::MiddleButton);
-    setFlag(ItemClipsChildrenToShape, true);
-    setFlag(ItemIsFocusScope, true);
-    setFlag(ItemAcceptsDrops, true);
-    setFlag(ItemAcceptsInputMethod, true);
+//    setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton | Qt::MiddleButton);
+//    setFlag(ItemClipsChildrenToShape, true);
+//    setFlag(ItemIsFocusScope, true);
+//    setFlag(ItemAcceptsDrops, true);
+//    setFlag(ItemAcceptsInputMethod, true);
 
     d->mContext = QMozContext::GetInstance();
     connect(this, SIGNAL(setIsActive(bool)), this, SLOT(SetIsActive(bool)));
     connect(this, SIGNAL(viewInitialized()), this, SLOT(processViewInitialization()));
-    connect(this, SIGNAL(enabledChanged()), this, SLOT(updateEnabled()));
-    connect(this, SIGNAL(dispatchItemUpdate()), this, SLOT(update()));
+//    connect(this, SIGNAL(enabledChanged()), this, SLOT(updateEnabled()));
+//    connect(this, SIGNAL(dispatchItemUpdate()), this, SLOT(update()));
     updateEnabled();
+
+//    qDebug() << Q_FUNC_INFO;
 }
 
 QuickMozView::~QuickMozView()
@@ -93,36 +95,45 @@ QuickMozView::~QuickMozView()
     delete d;
 }
 
+void QuickMozView::setWindow(QWindow *window)
+{
+    m_window = window;
+//    qDebug() << Q_FUNC_INFO;
+}
+
 void
 QuickMozView::SetIsActive(bool aIsActive)
 {
-    if (QThread::currentThread() == thread() && d->mView) {
+//    qDebug() << Q_FUNC_INFO << aIsActive;
+//    if (QThread::currentThread() == thread() && d->mView) {
         d->mView->SetIsActive(aIsActive);
-    } else {
-        Q_EMIT setIsActive(aIsActive);
-    }
+//    } else {
+//        Q_EMIT setIsActive(aIsActive);
+//    }
 }
 
 void
 QuickMozView::onInitialized()
 {
+    qDebug() << Q_FUNC_INFO;
     LOGT("QuickMozView");
-#ifndef NO_PRIVATE_API
-    if (mInThreadRendering) {
+//#ifndef NO_PRIVATE_API
+//    if (mInThreadRendering) {
         onRenderThreadReady();
-    }
-    else
-#endif
-    {
-        d->mContext->setCompositorInSeparateThread(true);
-        Q_EMIT wrapRenderThreadGLContext();
-        update();
-    }
+//    }
+//    else
+//#endif
+//    {
+//        d->mContext->setCompositorInSeparateThread(true);
+//        Q_EMIT wrapRenderThreadGLContext();
+//        update();
+//    }
 }
 
 void
 QuickMozView::onRenderThreadReady()
 {
+    qDebug() << Q_FUNC_INFO;
     if (!d->mView) {
         // We really don't care about SW rendering on Qt5 anymore
         d->mContext->GetApp()->SetIsAccelerated(true);
@@ -133,6 +144,7 @@ QuickMozView::onRenderThreadReady()
 
 void QuickMozView::processViewInitialization()
 {
+        qDebug() << Q_FUNC_INFO;
     // This is connected to view initialization. View must be initialized
     // over here.
     Q_ASSERT(d->mViewInitialized);
@@ -141,7 +153,8 @@ void QuickMozView::processViewInitialization()
 
 void QuickMozView::updateEnabled()
 {
-    d->mEnabled = QQuickItem::isEnabled();
+        qDebug() << Q_FUNC_INFO;
+    d->mEnabled = true; //QQuickItem::isEnabled();
 }
 
 void QuickMozView::createGeckoGLContext()
@@ -155,6 +168,7 @@ void QuickMozView::requestGLContext(bool& hasContext, QSize& viewPortSize)
 #ifndef NO_PRIVATE_API
     hasContext = hasContext && mInThreadRendering;
 #endif
+    qDebug() << Q_FUNC_INFO << hasContext;
     viewPortSize = d->mGLSurfaceSize;
 }
 
@@ -166,7 +180,7 @@ void QuickMozView::updateGLContextInfo(QOpenGLContext* ctx)
         return;
     }
     d->mGLSurfaceSize = ctx->surface()->size();
-    qDebug() << "new mGLSurfaceSize" << d->mGLSurfaceSize;
+    qDebug() << "new mGLSurfaceSize" << d->mGLSurfaceSize << d->mHasContext;
 }
 
 /**
@@ -175,7 +189,11 @@ void QuickMozView::updateGLContextInfo(QOpenGLContext* ctx)
  */
 void QuickMozView::updateGLContextInfo()
 {
-    QWindow *win = window() ? window() : m_window.data();
+    QWindow *win = m_window.data();
+    qDebug() << Q_FUNC_INFO;
+    if (win) {
+        qDebug() << Q_FUNC_INFO << win->width() << win->height();
+    }
     if (win) {
         Qt::ScreenOrientation orientation = win->contentOrientation();
         QSize viewPortSize;
@@ -201,17 +219,17 @@ void QuickMozView::updateGLContextInfo()
     }
 }
 
-void QuickMozView::itemChange(ItemChange change, const ItemChangeData &)
-{
-    if (change == ItemSceneChange) {
-        QQuickWindow *win = window();
-        if (!win)
-            return;
-        connect(win, SIGNAL(beforeRendering()), this, SLOT(beforeRendering()), Qt::DirectConnection);
-        connect(win, SIGNAL(sceneGraphInitialized()), this, SLOT(init()), Qt::DirectConnection);
-        win->setClearBeforeRendering(false);
-    }
-}
+//void QuickMozView::itemChange(ItemChange change, const ItemChangeData &)
+//{
+//    if (change == ItemSceneChange) {
+//        QQuickWindow *win = window();
+//        if (!win)
+//            return;
+//        connect(win, SIGNAL(beforeRendering()), this, SLOT(beforeRendering()), Qt::DirectConnection);
+//        connect(win, SIGNAL(sceneGraphInitialized()), this, SLOT(init()), Qt::DirectConnection);
+//        win->setClearBeforeRendering(false);
+//    }
+//}
 
 void QuickMozView::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
@@ -219,7 +237,7 @@ void QuickMozView::geometryChanged(const QRectF &newGeometry, const QRectF &oldG
                                                                  newGeometry.size().height(),
                                                                  oldGeometry.size().width(),
                                                                  oldGeometry.size().height());
-    QQuickItem::geometryChanged(newGeometry, oldGeometry);
+//    QQuickItem::geometryChanged(newGeometry, oldGeometry);
     // Width and height are updated separately. So we want to avoid cases where width and height
     // equals or size have not actually changed at all. This will trigger viewport
     // calculation update.
@@ -230,56 +248,58 @@ void QuickMozView::geometryChanged(const QRectF &newGeometry, const QRectF &oldG
     }
 }
 
-void QuickMozView::init()
+void QuickMozView::init(QOpenGLContext *context)
 {
-#ifndef NO_PRIVATE_API
-    if (thread() == QThread::currentThread()) {
+    Q_ASSERT(context);
+    //if (thread() == QThread::currentThread()) {
         mInThreadRendering = true;
-    }
-    else
-#endif
-    {
-        mSGRenderer = new QSGThreadObject();
-        connect(mSGRenderer, SIGNAL(onRenderThreadReady()), this, SLOT(onRenderThreadReady()));
-        connect(this, SIGNAL(wrapRenderThreadGLContext()), mSGRenderer, SLOT(onWrapRenderThreadGLContext()));
-    }
+//    }
+//    {
+//        mSGRenderer = new QSGThreadObject();
+//        connect(mSGRenderer, SIGNAL(onRenderThreadReady()), this, SLOT(onRenderThreadReady()));
+//        connect(this, SIGNAL(wrapRenderThreadGLContext()), mSGRenderer, SLOT(onWrapRenderThreadGLContext()));
+//    }
 
-    updateGLContextInfo(QOpenGLContext::currentContext());
+    qDebug() << "------------- mInThreadRendering:" << mInThreadRendering;
+    updateGLContextInfo(context);
 }
 
 void QuickMozView::beforeRendering()
 {
+    qDebug() << Q_FUNC_INFO;
     if (!d->mViewInitialized)
         return;
 
-#ifndef NO_PRIVATE_API
-    if (!mInThreadRendering)
-#endif
-    {
-        RefreshNodeTexture();
-    }
+//#ifndef NO_PRIVATE_API
+//    if (!mInThreadRendering)
+//#endif
+//    {
+//        RefreshNodeTexture();
+//    }
 }
 
 void QuickMozView::RenderToCurrentContext()
 {
+//    qDebug() << "render!!!:" << d->mView;
     QMatrix affine;
     gfxMatrix matr(affine.m11(), affine.m12(), affine.m21(), affine.m22(), affine.dx(), affine.dy());
     d->mView->SetGLViewTransform(matr);
-    QRect clipRect(0, 0, d->mSize.width(), d->mSize.height());
-    if (parentItem() && parentItem()->clip()) {
-        QRect parentClipRect = parentItem()->clipRect().toRect();
-        if (clipRect.contains(parentClipRect)) {
-            clipRect = parentClipRect;
-        }
-    }
-    d->mView->SetViewClipping(clipRect.x(), clipRect.y(), clipRect.width(), clipRect.height());
+    d->mView->SetViewOpacity(1.0);
+//    QRect clipRect(0, 0, d->mSize.width(), d->mSize.height());
+//    if (parentItem() && parentItem()->clip()) {
+//        QRect parentClipRect = parentItem()->clipRect().toRect();
+//        if (clipRect.contains(parentClipRect)) {
+//            clipRect = parentClipRect;
+//        }
+//    }
+//    d->mView->SetViewClipping(clipRect.x(), clipRect.y(), clipRect.width(), clipRect.height());
     d->mView->RenderGL();
 }
 
+#if 0
 QSGNode*
 QuickMozView::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
 {
-#ifndef NO_PRIVATE_API
     if (mInThreadRendering) {
         if (!d->mViewInitialized) {
             return oldNode;
@@ -296,7 +316,6 @@ QuickMozView::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
 
         return n;
     }
-#endif
 
 #if defined(QT_OPENGL_ES_2)
 #define TextureNodeType MozExtMaterialNode
@@ -313,7 +332,9 @@ QuickMozView::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     n->update();
     return n;
 }
+#endif
 
+#if 0
 void QuickMozView::RefreshNodeTexture()
 {
     int texId = 0, width = 0, height = 0;
@@ -321,6 +342,7 @@ void QuickMozView::RefreshNodeTexture()
        Q_EMIT textureReady(texId, QSize(width, height));
     }
 }
+#endif
 
 int QuickMozView::parentId() const
 {
@@ -334,6 +356,7 @@ bool QuickMozView::active() const
 
 void QuickMozView::setActive(bool active)
 {
+//    qDebug() << Q_FUNC_INFO << active << d->mViewInitialized;
     if (d->mViewInitialized) {
         if (mActive != active) {
             mActive = active;
@@ -353,27 +376,23 @@ void QuickMozView::setActive(bool active)
 
 bool QuickMozView::Invalidate()
 {
-#ifndef NO_PRIVATE_API
-    if (mInThreadRendering) {
-        update();
-        mHasPendingInvalidate = true;
-        return true;
-    }
-#endif
-    QMatrix affine;
-    gfxMatrix matr(affine.m11(), affine.m12(), affine.m21(), affine.m22(), affine.dx(), affine.dy());
-    d->mView->SetGLViewTransform(matr);
-    return false;
+//    qDebug() << "--------- invalidate...";
+//#ifndef NO_PRIVATE_API
+    mHasPendingInvalidate = true;
+    Q_EMIT requestUpdate();
+    return true;
 }
 
 void QuickMozView::CompositingFinished()
 {
+#if 0
 #ifndef NO_PRIVATE_API
     if (!mInThreadRendering)
 #endif
     {
         Q_EMIT dispatchItemUpdate();
     }
+#endif
 }
 
 void QuickMozView::cleanup()
@@ -393,9 +412,9 @@ void QuickMozView::mouseMoveEvent(QMouseEvent* e)
         recvMouseMove(e->pos().x(), e->pos().y());
         e->setAccepted(accepted);
     }
-    else {
-        QQuickItem::mouseMoveEvent(e);
-    }
+//    else {
+//        QQuickItem::mouseMoveEvent(e);
+//    }
 }
 
 void QuickMozView::mousePressEvent(QMouseEvent* e)
@@ -405,9 +424,9 @@ void QuickMozView::mousePressEvent(QMouseEvent* e)
         recvMousePress(e->pos().x(), e->pos().y());
         e->setAccepted(accepted);
     }
-    else {
-        QQuickItem::mousePressEvent(e);
-    }
+//    else {
+//        QQuickItem::mousePressEvent(e);
+//    }
 }
 
 void QuickMozView::mouseReleaseEvent(QMouseEvent* e)
@@ -417,9 +436,9 @@ void QuickMozView::mouseReleaseEvent(QMouseEvent* e)
         recvMouseRelease(e->pos().x(), e->pos().y());
         e->setAccepted(accepted);
     }
-    else {
-        QQuickItem::mouseReleaseEvent(e);
-    }
+//    else {
+//        QQuickItem::mouseReleaseEvent(e);
+//    }
 }
 
 void QuickMozView::setInputMethodHints(Qt::InputMethodHints hints)
@@ -505,19 +524,22 @@ QuickMozView::inputMethodQuery(Qt::InputMethodQuery property) const
 
 void QuickMozView::focusInEvent(QFocusEvent* event)
 {
+    Q_UNUSED(event);
     d->SetIsFocused(true);
-    QQuickItem::focusInEvent(event);
+//    QQuickItem::focusInEvent(event);
 }
 
 void QuickMozView::focusOutEvent(QFocusEvent* event)
 {
+    Q_UNUSED(event);
     d->SetIsFocused(false);
-    QQuickItem::focusOutEvent(event);
+//    QQuickItem::focusOutEvent(event);
 }
 
 void QuickMozView::forceViewActiveFocus()
 {
-    forceActiveFocus();
+    //qDebug() << Q_FUNC_INFO;
+    //forceActiveFocus();
     if (d->mViewInitialized) {
         setActive(true);
         d->mView->SetIsFocused(true);
@@ -708,6 +730,7 @@ void QuickMozView::reload()
 
 void QuickMozView::load(const QString& url)
 {
+//    qDebug() << Q_FUNC_INFO << url;
     if (url.isEmpty())
         return;
 
@@ -844,6 +867,7 @@ void QuickMozView::scrollTo(const QPointF& position)
 
 void QuickMozView::suspendView()
 {
+//    qDebug() << Q_FUNC_INFO;
     if (!d->mView) {
         return;
     }
@@ -853,6 +877,7 @@ void QuickMozView::suspendView()
 
 void QuickMozView::resumeView()
 {
+//    qDebug() << Q_FUNC_INFO;
     if (!d->mView) {
         return;
     }
@@ -923,9 +948,11 @@ void QuickMozView::touchEvent(QTouchEvent *event)
 
     if (!mUseQmlMouse || event->touchPoints().count() > 1) {
         d->touchEvent(event);
-    } else {
-        QQuickItem::touchEvent(event);
     }
+    event->accept();
+//    else {
+//        QQuickItem::touchEvent(event);
+//    }
 }
 
 void QuickMozView::timerEvent(QTimerEvent *event)
@@ -943,9 +970,11 @@ void QuickMozView::timerEvent(QTimerEvent *event)
     }
 }
 
-void QuickMozView::componentComplete()
+void QuickMozView::componentComplete(QOpenGLContext *context)
 {
-    QQuickItem::componentComplete();
+    qDebug() << "componentComplete()";
+
+//    QQuickItem::componentComplete();
     // Now property assigned to QuickMozView are in place. Do rest of initialization
     // steps. For instance mParentID needs to be passed to CreateView when subviews are created.
     // TODO: Initialization steps could be improved futher e.g. by adding messageListeners
@@ -953,10 +982,10 @@ void QuickMozView::componentComplete()
     // in viewInitilized signal handler.
     // Temporary check for QML_BAD_GUI_RENDER_LOOP in order to not break current behavior and make it work for
     // multi thread rendering context
-    static bool isForcedInThreadRendering = getenv("QML_BAD_GUI_RENDER_LOOP") != 0 && getenv("QML_FORCE_THREADED_RENDERER") == 0;
-    if (isForcedInThreadRendering) {
-      init();
-    }
+//    static bool isForcedInThreadRendering = getenv("QML_BAD_GUI_RENDER_LOOP") != 0 && getenv("QML_FORCE_THREADED_RENDERER") == 0;
+//    if (isForcedInThreadRendering) {
+      init(context);
+//    }
     if (!d->mContext->initialized()) {
         connect(d->mContext, SIGNAL(onInitialized()), this, SLOT(onInitialized()));
     } else {

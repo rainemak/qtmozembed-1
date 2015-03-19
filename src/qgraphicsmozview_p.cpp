@@ -18,6 +18,8 @@
 #include "qmozembedlog.h"
 #include <sys/time.h>
 
+#include <QDebug>
+
 #ifndef MOZVIEW_FLICK_THRESHOLD
 #define MOZVIEW_FLICK_THRESHOLD 200
 #endif
@@ -88,11 +90,13 @@ QGraphicsMozViewPrivate::~QGraphicsMozViewPrivate()
 
 void QGraphicsMozViewPrivate::CompositorCreated()
 {
+    qDebug() << Q_FUNC_INFO;
     mViewIface->createGeckoGLContext();
 }
 
 void QGraphicsMozViewPrivate::UpdateScrollArea(unsigned int aWidth, unsigned int aHeight, float aPosX, float aPosY)
 {
+//    qDebug() << Q_FUNC_INFO << aWidth << aHeight << aPosX << aPosY;
     bool widthChanged = false;
     bool heightChanged = false;
     // Emit changes only after both values have been updated.
@@ -146,6 +150,7 @@ void QGraphicsMozViewPrivate::UpdateScrollArea(unsigned int aWidth, unsigned int
 
 void QGraphicsMozViewPrivate::TestFlickingMode(QTouchEvent *event)
 {
+//        qDebug() << Q_FUNC_INFO;
     QPointF touchPoint = event->touchPoints().size() == 1 ? event->touchPoints().at(0).pos() : QPointF();
     // Only for single press point
     if (!touchPoint.isNull()) {
@@ -184,6 +189,7 @@ void QGraphicsMozViewPrivate::TestFlickingMode(QTouchEvent *event)
 
 void QGraphicsMozViewPrivate::HandleTouchEnd(bool &draggingChanged, bool &pinchingChanged)
 {
+//        qDebug() << Q_FUNC_INFO;
     if (mDragging) {
         mDragging = false;
         draggingChanged = true;
@@ -222,6 +228,7 @@ void QGraphicsMozViewPrivate::UpdateMoving(bool moving)
 
 void QGraphicsMozViewPrivate::UpdateViewSize()
 {
+//        qDebug() << Q_FUNC_INFO << mSize << mViewInitialized;
     if (mSize.isEmpty())
         return;
 
@@ -237,6 +244,7 @@ void QGraphicsMozViewPrivate::UpdateViewSize()
 
 bool QGraphicsMozViewPrivate::RequestCurrentGLContext()
 {
+//        qDebug() << Q_FUNC_INFO;
     QSize unused;
     return RequestCurrentGLContext(unused);
 }
@@ -245,11 +253,13 @@ bool QGraphicsMozViewPrivate::RequestCurrentGLContext(QSize& aViewPortSize)
 {
     bool hasContext = false;
     mViewIface->requestGLContext(hasContext, aViewPortSize);
+//    qDebug() << Q_FUNC_INFO << hasContext;
     return hasContext;
 }
 
 void QGraphicsMozViewPrivate::ViewInitialized()
 {
+//        qDebug() << Q_FUNC_INFO;
     mViewInitialized = true;
     UpdateViewSize();
     // This is currently part of official API, so let's subscribe to these messages by default
@@ -259,22 +269,26 @@ void QGraphicsMozViewPrivate::ViewInitialized()
 
 void QGraphicsMozViewPrivate::SetBackgroundColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
+        qDebug() << Q_FUNC_INFO;
     mBgColor = QColor(r, g, b, a);
     mViewIface->bgColorChanged();
 }
 
 bool QGraphicsMozViewPrivate::Invalidate()
 {
+//        qDebug() << Q_FUNC_INFO;
     return mViewIface->Invalidate();
 }
 
 void QGraphicsMozViewPrivate::CompositingFinished()
 {
+//    qDebug() << Q_FUNC_INFO;
     mViewIface->CompositingFinished();
 }
 
 void QGraphicsMozViewPrivate::OnLocationChanged(const char* aLocation, bool aCanGoBack, bool aCanGoForward)
 {
+//        qDebug() << Q_FUNC_INFO;
     if (mCanGoBack != aCanGoBack || mCanGoForward != aCanGoForward) {
         mCanGoBack = aCanGoBack;
         mCanGoForward = aCanGoForward;
@@ -289,6 +303,7 @@ void QGraphicsMozViewPrivate::OnLocationChanged(const char* aLocation, bool aCan
 
 void QGraphicsMozViewPrivate::OnLoadProgress(int32_t aProgress, int32_t aCurTotal, int32_t aMaxTotal)
 {
+//        qDebug() << Q_FUNC_INFO;
     if (mIsLoading) {
         mProgress = aProgress;
         mViewIface->loadProgressChanged();
@@ -298,6 +313,7 @@ void QGraphicsMozViewPrivate::OnLoadProgress(int32_t aProgress, int32_t aCurTota
 void QGraphicsMozViewPrivate::OnLoadStarted(const char* aLocation)
 {
     Q_UNUSED(aLocation);
+//        qDebug() << Q_FUNC_INFO;
 
     if (mIsPainted) {
         mIsPainted = false;
@@ -313,6 +329,7 @@ void QGraphicsMozViewPrivate::OnLoadStarted(const char* aLocation)
 
 void QGraphicsMozViewPrivate::OnLoadFinished(void)
 {
+//        qDebug() << Q_FUNC_INFO;
     if (mIsLoading) {
         mProgress = 100;
         mIsLoading = false;
@@ -322,12 +339,14 @@ void QGraphicsMozViewPrivate::OnLoadFinished(void)
 
 void QGraphicsMozViewPrivate::OnWindowCloseRequested()
 {
+//        qDebug() << Q_FUNC_INFO;
     mViewIface->windowCloseRequested();
 }
 
 // View finally destroyed and deleted
 void QGraphicsMozViewPrivate::ViewDestroyed()
 {
+//        qDebug() << Q_FUNC_INFO;
     LOGT();
     mView = NULL;
     mViewInitialized = false;
@@ -336,6 +355,7 @@ void QGraphicsMozViewPrivate::ViewDestroyed()
 
 void QGraphicsMozViewPrivate::RecvAsyncMessage(const char16_t* aMessage, const char16_t* aData)
 {
+//        qDebug() << Q_FUNC_INFO;
     NS_ConvertUTF16toUTF8 message(aMessage);
     NS_ConvertUTF16toUTF8 data(aData);
 
@@ -355,6 +375,7 @@ void QGraphicsMozViewPrivate::RecvAsyncMessage(const char16_t* aMessage, const c
 
 char* QGraphicsMozViewPrivate::RecvSyncMessage(const char16_t* aMessage, const char16_t*  aData)
 {
+        qDebug() << Q_FUNC_INFO << aMessage;
     QMozReturnValue response;
     NS_ConvertUTF16toUTF8 message(aMessage);
     NS_ConvertUTF16toUTF8 data(aData);
@@ -376,17 +397,21 @@ char* QGraphicsMozViewPrivate::RecvSyncMessage(const char16_t* aMessage, const c
 
 void QGraphicsMozViewPrivate::OnLoadRedirect(void)
 {
+//        qDebug() << Q_FUNC_INFO;
     LOGT();
+
     mViewIface->loadRedirect();
 }
 
 void QGraphicsMozViewPrivate::OnSecurityChanged(const char* aStatus, unsigned int aState)
 {
+//        qDebug() << Q_FUNC_INFO;
     LOGT();
     mViewIface->securityChanged(aStatus, aState);
 }
 void QGraphicsMozViewPrivate::OnFirstPaint(int32_t aX, int32_t aY)
 {
+//        qDebug() << Q_FUNC_INFO;
     LOGT();
     mIsPainted = true;
     mViewIface->firstPaint(aX, aY);
@@ -394,6 +419,7 @@ void QGraphicsMozViewPrivate::OnFirstPaint(int32_t aX, int32_t aY)
 
 void QGraphicsMozViewPrivate::SetIsFocused(bool aIsFocused)
 {
+//        qDebug() << Q_FUNC_INFO;
     mViewIsFocused = aIsFocused;
     if (mViewInitialized) {
         mView->SetIsFocused(aIsFocused);
@@ -403,6 +429,7 @@ void QGraphicsMozViewPrivate::SetIsFocused(bool aIsFocused)
 void QGraphicsMozViewPrivate::IMENotification(int aIstate, bool aOpen, int aCause, int aFocusChange,
                                               const char16_t* inputType, const char16_t* inputMode)
 {
+//    qDebug() << Q_FUNC_INFO;
     Qt::InputMethodHints hints = Qt::ImhNone;
     hints = aIstate == 2 ? Qt::ImhHiddenText : Qt::ImhPreferLowercase;
 
@@ -447,6 +474,7 @@ void QGraphicsMozViewPrivate::IMENotification(int aIstate, bool aOpen, int aCaus
 
 void QGraphicsMozViewPrivate::GetIMEStatus(int32_t* aIMEEnabled, int32_t* aIMEOpen, intptr_t* aNativeIMEContext)
 {
+//        qDebug() << Q_FUNC_INFO;
     *aNativeIMEContext = (intptr_t)qApp->inputMethod();
 }
 
@@ -463,6 +491,7 @@ void QGraphicsMozViewPrivate::OnScrollChanged(int32_t offSetX, int32_t offSetY)
 
 void QGraphicsMozViewPrivate::OnTitleChanged(const char16_t* aTitle)
 {
+//        qDebug() << Q_FUNC_INFO;
     mTitle = QString((QChar*)aTitle);
     mViewIface->titleChanged();
 }
@@ -704,6 +733,7 @@ void QGraphicsMozViewPrivate::touchEvent(QTouchEvent* event)
 
 void QGraphicsMozViewPrivate::ReceiveInputEvent(const InputData& event)
 {
+//        qDebug() << Q_FUNC_INFO << mViewInitialized;
     if (mViewInitialized) {
         mView->ReceiveInputEvent(event);
     }

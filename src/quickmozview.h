@@ -16,7 +16,7 @@
 class QGraphicsMozViewPrivate;
 class QSGThreadObject;
 
-class QuickMozView : public QQuickItem
+class QuickMozView : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(int parentId READ parentId WRITE setParentID NOTIFY parentIdChanged FINAL)
@@ -27,8 +27,10 @@ class QuickMozView : public QQuickItem
     Q_MOZ_VIEW_PRORERTIES
 
 public:
-    QuickMozView(QQuickItem *parent = 0);
+    QuickMozView(QObject *parent = 0);
     ~QuickMozView();
+
+    void setWindow(QWindow *window);
 
     Q_MOZ_VIEW_PUBLIC_METHODS
     void RenderToCurrentContext();
@@ -40,7 +42,22 @@ public:
     bool active() const;
     void setActive(bool active);
     virtual void geometryChanged(const QRectF & newGeometry, const QRectF & oldGeometry);
-    QPointer<QWindow> m_window;
+
+    //    void itemChange(ItemChange change, const ItemChangeData &);
+    //    virtual QSGNode* updatePaintNode(QSGNode* node, UpdatePaintNodeData* data);
+    virtual void mouseMoveEvent(QMouseEvent* event);
+    virtual void mousePressEvent(QMouseEvent* event);
+    virtual void mouseReleaseEvent(QMouseEvent* event);
+    virtual QVariant inputMethodQuery(Qt::InputMethodQuery property) const;
+    virtual void inputMethodEvent(QInputMethodEvent* event);
+    virtual void keyPressEvent(QKeyEvent*);
+    virtual void keyReleaseEvent(QKeyEvent*);
+    virtual void focusInEvent(QFocusEvent*);
+    virtual void focusOutEvent(QFocusEvent*);
+    virtual void touchEvent(QTouchEvent*);
+    virtual void timerEvent(QTimerEvent*);
+    // Should be renamed...
+    virtual void componentComplete(QOpenGLContext *context);
 
 private:
     QObject* getChild() { return this; }
@@ -58,6 +75,7 @@ Q_SIGNALS:
     void textureReady(int id, const QSize &size);
     void parentIdChanged();
     void activeChanged();
+    void requestUpdate();
 
     Q_MOZ_VIEW_SIGNALS
 
@@ -65,26 +83,9 @@ private Q_SLOTS:
     void processViewInitialization();
     void SetIsActive(bool aIsActive);
 
-// INTERNAL
-protected:
-    void itemChange(ItemChange change, const ItemChangeData &);
-    virtual QSGNode* updatePaintNode(QSGNode* node, UpdatePaintNodeData* data);
-    virtual void mouseMoveEvent(QMouseEvent* event);
-    virtual void mousePressEvent(QMouseEvent* event);
-    virtual void mouseReleaseEvent(QMouseEvent* event);
-    virtual QVariant inputMethodQuery(Qt::InputMethodQuery property) const;
-    virtual void inputMethodEvent(QInputMethodEvent* event);
-    virtual void keyPressEvent(QKeyEvent*);
-    virtual void keyReleaseEvent(QKeyEvent*);
-    virtual void focusInEvent(QFocusEvent*);
-    virtual void focusOutEvent(QFocusEvent*);
-    virtual void touchEvent(QTouchEvent*);
-    virtual void timerEvent(QTimerEvent*);
-    virtual void componentComplete();
-
 public Q_SLOTS:
     void beforeRendering();
-    void init();
+    void init(QOpenGLContext *context);
     void cleanup();
     void setInputMethodHints(Qt::InputMethodHints hints);
     void updateGLContextInfo(QOpenGLContext*);
@@ -108,6 +109,7 @@ private:
     bool mPreedit;
     bool mActive;
     bool mHasPendingInvalidate;
+    QPointer<QWindow> m_window;
 };
 
 #endif // QuickMozView_H

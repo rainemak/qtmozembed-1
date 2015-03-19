@@ -33,14 +33,14 @@ HEADERS += qmozcontext.h \
            qmozview_defined_wrapper.h \
            qmozview_templated_wrapper.h
 
-SOURCES += quickmozview.cpp qmoztexturenode.cpp qsgthreadobject.cpp qmozextmaterialnode.cpp
-HEADERS += quickmozview.h qmoztexturenode.h qsgthreadobject.h qmozextmaterialnode.h
-!isEmpty(NO_PRIVATE_API) {
-  DEFINES += NO_PRIVATE_API
-} else {
-  SOURCES += qmozviewsgnode.cpp
-  HEADERS += qmozviewsgnode.h
-}
+SOURCES += quickmozview.cpp # qmoztexturenode.cpp qsgthreadobject.cpp qmozextmaterialnode.cpp
+HEADERS += quickmozview.h # qmoztexturenode.h qsgthreadobject.h qmozextmaterialnode.h
+#!isEmpty(NO_PRIVATE_API) {
+#  DEFINES += NO_PRIVATE_API
+#} else {
+#  SOURCES += qmozviewsgnode.cpp
+#  HEADERS += qmozviewsgnode.h
+#}
 
 !isEmpty(BUILD_QT5QUICK1) {
   SOURCES += qdeclarativemozview.cpp qgraphicsmozview.cpp
