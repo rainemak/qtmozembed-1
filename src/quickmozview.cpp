@@ -16,8 +16,6 @@
 #include <QThread>
 #include <QMutexLocker>
 #include <QGuiApplication>
-#include <QJsonDocument>
-#include <QJsonParseError>
 #include <QtQuick/qquickwindow.h>
 #include <QtGui/QOpenGLShaderProgram>
 #include <QtGui/QOpenGLContext>
@@ -699,13 +697,7 @@ void QuickMozView::load(const QString& url)
 
 void QuickMozView::sendAsyncMessage(const QString& name, const QVariant& variant)
 {
-    if (!d->mViewInitialized)
-        return;
-
-    QJsonDocument doc = QJsonDocument::fromVariant(variant);
-    QByteArray array = doc.toJson();
-
-    d->mView->SendAsyncMessage((const char16_t*)name.constData(), NS_ConvertUTF8toUTF16(array.constData()).get());
+    d->sendAsyncMessage(name, variant);
 }
 
 void QuickMozView::addMessageListener(const QString& name)

@@ -82,6 +82,8 @@ public:
     void addMessageListener(const QString &name);
     void addMessageListeners(const QStringList &messageNamesList);
 
+    void sendAsyncMessage(const QString& name, const QVariant& variant);
+
     void startMoveMonitor();
     void timerEvent(QTimerEvent *event);
 
