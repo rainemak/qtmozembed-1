@@ -84,6 +84,11 @@ public:
 
     void sendAsyncMessage(const QString& name, const QVariant& variant);
 
+    QVariant inputMethodQuery(Qt::InputMethodQuery property) const;
+    void inputMethodEvent(QInputMethodEvent *event);
+    void keyPressEvent(QKeyEvent *event);
+    void keyReleaseEvent(QKeyEvent *event);
+
     void startMoveMonitor();
     void timerEvent(QTimerEvent *event);
 
@@ -130,6 +135,7 @@ public:
     bool mIsPainted;
     Qt::InputMethodHints mInputMethodHints;
     bool mIsInputFieldFocused;
+    bool mPreedit;
     bool mViewIsFocused;
     bool mHasContext;
     QSize mGLSurfaceSize;
