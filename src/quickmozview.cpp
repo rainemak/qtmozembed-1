@@ -102,8 +102,6 @@ void
 QuickMozView::contextInitialized()
 {
     LOGT("QuickMozView");
-    // We really don't care about SW rendering on Qt5 anymore
-    d->mContext->GetApp()->SetIsAccelerated(true);
     d->setMozWindow(new QMozWindow);
     connect(d->mMozWindow.data(), &QMozWindow::compositingFinished,
             this, &QuickMozView::compositingFinished);
