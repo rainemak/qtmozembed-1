@@ -186,6 +186,14 @@ void QOpenGLWebPage::setActive(bool active)
         mActive = active;
         d->mView->SetIsActive(mActive);
         Q_EMIT activeChanged();
+
+        disconnect(mozWindow(), &QMozWindow::drawOverlay,
+                   this, &QOpenGLWebPage::onDrawOverlay);
+
+        if (mActive) {
+            connect(mozWindow(), &QMozWindow::drawOverlay,
+                    this, &QOpenGLWebPage::onDrawOverlay, Qt::DirectConnection);
+        }
     }
 }
 
